@@ -1,36 +1,33 @@
 import tensorflow as tf
 
 
-class Graph():
+class Graph:
     def __init__(self, actions, load_dir=None):
         self.actions = actions
+        self.load_dir = load_dir
 
-        if load_dir == None:
-            self.load_dir = None
-        else:
-            self.load_dir = load_dir
 
-    def get_weights(self, shape, name='weights'):
+    def _get_weights(self, shape, name='weights'):
         with tf.name_scope(name):
             weights = tf.Variable(tf.truncated_normal(shape, stddev=0.1))
         tf.summary.histogram(name, weights)
         return weights
 
-    def get_bias(self, shape, name):
+    def _get_bias(self, shape, name):
         with tf.name_scope(name):
             bias = tf.Variable(tf.constant(0.1, shape=shape))
         tf.summary.histogram(name, bias)
         return bias
 
-    def convolution_layer(self, input_layer, weights, name='conv_layer'):
+    def _convolution_layer(self, input_layer, weights, name='conv_layer'):
         with tf.name_scope(name):
             return tf.nn.conv2d(input_layer, weights, strides=[1, 1, 1, 1], padding='SAME')
 
-    def max_pooling_layer(self, input_layer, name='max_pool_layer'):
+    def _max_pooling_layer(self, input_layer, name='max_pool_layer'):
         with tf.name_scope(name):
             return tf.nn.max_pool(input_layer, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-    def create_new_graph(self):
+    def _create_new_graph(self):
         with tf.name_scope("Input"):
             input = tf.placeholder(tf.float32, shape=[None, 25600])
             input = tf.reshape(input, [-1, 28, 28, 1])
@@ -80,9 +77,12 @@ class Graph():
 
     def get_graph(self):
         graph = self.create_new_graph()
-        if self.load_dir != None:
+        if not self.load_dir:
             saver = tf.train.Saver()
             sess = tf.Session()
             saver.restore(sess, self.load_dir)
             tf.logging.INFO('Successfully loaded the graph')
         return graph
+
+if __name__ == '__main__':
+    Graph(action = 10).get_graph()
