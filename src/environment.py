@@ -26,6 +26,7 @@ class GymEnvironment(Environment):
     def __init__(self, game_name):
         super().__init__()
         self.game_name = game_name
+        self.make()
 
     def make(self):
         self.env = gym.make(self.game_name)
@@ -39,5 +40,21 @@ class GymEnvironment(Environment):
     def step(self, action):
         return self.env.step(action)
 
-    def action_space(self):
-        return self.env.action.space
+    def actions(self):
+        return self.env.action_space.n
+
+
+def main():
+    env = GymEnvironment('MsPacman-ram-v0')
+    env.reset()
+    no_of_action = env.actions()
+    for _ in range(1000):
+        env.render()
+        observation,reward,done,info = env.step(0)
+        print (observation)
+
+
+
+
+if __name__ == '__main__':
+    main()
