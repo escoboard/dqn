@@ -1,8 +1,6 @@
 import os
 import time
 
-EXECUTION_PATH = "summary"
-
 
 class Executor:
     def __init__(self, execution_path):
@@ -39,7 +37,7 @@ class Executor:
 
 
 if __name__ == '__main__':
-    executor = Executor(EXECUTION_PATH)
+    executor = Executor("summary")
     for _ in range(5):
         executor.new_game()
         time.sleep(1)
