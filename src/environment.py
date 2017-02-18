@@ -1,4 +1,6 @@
 import gym
+from PIL import Image
+from numpy import array
 
 
 class Environment():
@@ -38,7 +40,9 @@ class GymEnvironment(Environment):
         self.env.render()
 
     def step(self, action):
-        return self.env.step(action)
+        observation, reward, done, info = self.env.step(action)
+        observation = array(Image.fromarray(observation).resize((80, 80)))
+        return observation, reward, done, info
 
     def actions(self):
         return self.env.action_space.n
@@ -50,10 +54,8 @@ def main():
     no_of_action = env.actions()
     for _ in range(1000):
         env.render()
-        observation,reward,done,info = env.step(0)
-        print (observation)
-
-
+        observation, reward, done, info = env.step(0)
+        print(observation)
 
 
 if __name__ == '__main__':
