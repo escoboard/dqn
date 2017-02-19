@@ -2,7 +2,7 @@ import tensorflow as tf
 from random import randint
 import numpy as np
 
-class Dqn:
+class DQN:
     def __init__(self,sess,gamma):
         self.sess=sess
         self.gamma=gamma
