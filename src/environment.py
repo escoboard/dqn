@@ -1,6 +1,6 @@
 import gym
+import numpy as np
 from PIL import Image
-from numpy import array
 
 
 class Environment():
@@ -41,7 +41,7 @@ class GymEnvironment(Environment):
 
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
-        observation = array(Image.fromarray(observation).resize((80, 80)))
+        observation = np.array(Image.fromarray(observation).resize((80, 80)))
         return observation, reward, done, info
 
     def actions(self):
@@ -49,7 +49,7 @@ class GymEnvironment(Environment):
 
 
 def main():
-    env = GymEnvironment('MsPacman-ram-v0')
+    env = GymEnvironment('MsPacman-v0')
     env.reset()
     no_of_action = env.actions()
     for _ in range(1000):

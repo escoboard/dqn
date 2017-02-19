@@ -5,6 +5,8 @@ class Graph:
     def __init__(self, actions, load_dir=None):
         self.actions = actions
         self.load_dir = load_dir
+        self.graph = None
+        self.input_layer = None
 
     def _get_weights(self, shape, name='weights'):
         with tf.name_scope(name):
@@ -28,8 +30,8 @@ class Graph:
 
     def _create_new_graph(self):
         with tf.name_scope("Input"):
-            i = tf.placeholder(tf.float32, shape=[None, 25600],name='id')
-            input = tf.reshape(i, [-1, 80, 320, 1])
+            input_layer = tf.placeholder(tf.float32, shape=[None, 25600],name='id')
+            input = tf.reshape(input_layer, [-1, 80, 320, 1])
         '''with tf.name_scope("Output"):
             action_value = tf.placeholder(tf.float32, shape=[None, self.actions])'''
 
@@ -56,6 +58,7 @@ class Graph:
             conv_4_bias = self._get_bias([256])
             conv_layer_4 = tf.nn.relu(self._convolution_layer(conv_pool_3, conv_4_weights) + conv_4_bias)
             conv_pool_4 = self._max_pooling_layer(conv_layer_4)
+
         with tf.name_scope("HiddenLayer"):
             hidden_1_weights = self._get_weights([5 * 20 * 256, 2048])
             hidden_1_bias = self._get_bias([2048])
@@ -74,16 +77,19 @@ class Graph:
         final_graph = tf.train.AdamOptimizer(1e-4).minimize(loss)
         '''
 
-        return action,i
+        return action, input_layer
 
     def get_graph(self):
-        graph,i = self._create_new_graph()
-        if self.load_dir != None:
+        self.graph, self.input_layer = self._create_new_graph()
+        if self.load_dir:
             saver = tf.train.Saver()
             sess = tf.Session()
             saver.restore(sess, self.load_dir)
             tf.logging.INFO('Successfully loaded the graph')
-        return graph,i
+        return self.graph
+
+    def run_graph(self, session, image):
+        print(session.run(self.graph, feed_dict={self.input_layer: image}))
 
 
 if __name__ == '__main__':
