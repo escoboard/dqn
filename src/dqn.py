@@ -7,6 +7,8 @@ class DQN:
         self.sess=sess
         self.gamma=gamma
 
+
+
     def compute_loss(self,game_batch_data):
         game_data = game_batch_data.get_data()
         for game in game_data:
@@ -26,7 +28,7 @@ class DQN:
                 random_batch_data.append(game[randint(3,no_steps-1)])
         return random_batch_data
 
-    def train(self,game_batch_data,epoch_factor):
+    def train(self,game_batch_data,epoch_factor,graph_input,graph_action_value,graph_updated_value,graph_train_op):
         total_no_step = game_batch_data.get_total_steps()
         no_of_epochs = int(total_no_step*epoch_factor)
         for x in no_of_epochs:
@@ -40,9 +42,9 @@ class DQN:
                 step_action_value=data['action_value']
                 actions_value.append(step_action_value)
                 new_value = step_action_value[:]
-                new_value[data['action']] = data['loss']-new_value[data['action']]
+                new_value[data['action']] += data['loss']
                 update_action.append(new_value)
 
-            self.sess.run(train_op, feed_dict = {input:np.array(input_observation),
-                                            updated_action:np.array(update_action),
-                                            action_value:np.array(actions_value)}
+            self.sess.run(graph_train_op, feed_dict = {graph_input:np.array(input_observation),
+                                                 graph_action_value:np.array(update_action),
+                                                 graph_updated_value:np.array(actions_value)}
