@@ -72,16 +72,16 @@ class Graph:
             readout_bias = self._get_bias([self.actions])
 
         with tf.name_scope('Output_Distribution'):
-            action_taken = tf.matmul(hidden_1_layer_output, readout_weights) + readout_bias
-            tf.summary.histogram('output',action_taken)
+            action_value = tf.matmul(hidden_1_layer_output, readout_weights) + readout_bias
+            tf.summary.histogram('output', action_value)
 
         with tf.name_scope("Loss"):
-            loss = updated_action-action_taken
+            loss = updated_action - action_value
             tf.summary.histogram("Loss", loss)
 
         train_op = tf.train.AdamOptimizer(1e-4).minimize(loss)
 
-        return action_taken, input_layer, loss,updated_action ,train_op
+        return train_op, input_layer, action_value, updated_action
 
     def _load_graph(self, load_dir):
         saver = tf.train.Saver()
@@ -95,10 +95,10 @@ class Graph:
         tf.logging.INFO('Successfully saved the graph at %s'%save_dir)
 
     def get_graph(self):
-        self.graph , input_layer ,loss,updated_action,train_op = self._create_new_graph()
+        self.graph, input_layer, action_value, updated_action = self._create_new_graph()
         if self.load_dir:
             self._load_graph(self.load_dir)
-        return self.graph, input_layer, loss , train_op
+        return self.graph, input_layer, action_value, updated_action
 
 if __name__ == '__main__':
     Graph(action=10).get_graph()
