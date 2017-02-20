@@ -3,6 +3,7 @@ class GameBatchData:
         self.data = []
         self.game_timestamps = []
         self.current_game_index = None
+        self.steps = 0
 
     def new_game(self, timestamp):
         self.game_timestamps.append(timestamp)
@@ -23,9 +24,13 @@ class GameBatchData:
             'action': action,
             'loss': None
         }
+        self.steps += 1
         self.data[self.current_game_index].append(step_observation)
         data_index = len(self.data[self.current_game_index]) - 1
         return data_index
 
     def get_data(self):
         return self.data
+
+    def get_total_steps(self):
+        return self.steps
