@@ -10,13 +10,13 @@ class Graph:
 
     def _get_weights(self, shape, name='weights'):
         with tf.name_scope(name):
-            weights = tf.Variable(tf.truncated_normal(shape, stddev=0.05))
+            weights = tf.Variable(tf.truncated_normal(shape, stddev=0.01))
         tf.summary.histogram(name, weights)
         return weights
 
     def _get_bias(self, shape, name='bias'):
         with tf.name_scope(name):
-            bias = tf.Variable(tf.constant(0.05, shape=shape))
+            bias = tf.Variable(tf.constant(0.01, shape=shape))
         tf.summary.histogram(name, bias)
         return bias
 

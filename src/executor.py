@@ -34,11 +34,12 @@ class Executor:
             image_titles = []
             os.makedirs("{}/{}".format(self.game, title), exist_ok=True)
             for screenshot in screenshots:
-                image = Image.fromarray(screenshot[0])
-                timestamp = screenshot[1]
-                image_title = "{}/{}/screen{}.png".format(self.game, title, timestamp)
-                image.save(image_title)
-                image_titles.append(image_title)
+                if screenshot[0] is not None:
+                    image = Image.fromarray(screenshot[0])
+                    timestamp = screenshot[1]
+                    image_title = "{}/{}/screen{}.png".format(self.game, title, timestamp)
+                    image.save(image_title)
+                    image_titles.append(image_title)
             if title == 'screenshots':
                 self._generate_gif(image_titles)
 
