@@ -1,7 +1,8 @@
 import gym
 
-env = gym.make('CartPole-v0')
+env = gym.make('Breakout-v0')
 env.reset()
-for _ in range(1000):
+for _ in range(10):
     env.render()
     env.step(env.action_space.sample())
+    print(env.action_space.sample())

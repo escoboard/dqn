@@ -1,4 +1,4 @@
-from src.executor import Executor
+from executor import Executor
 
 
 class GameBatchData:
