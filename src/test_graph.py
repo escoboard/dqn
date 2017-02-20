@@ -2,8 +2,8 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 
-from src.graph import Graph
-from src.environment import GymEnvironment
+from graph import Graph
+from environment import GymEnvironment
 
 
 def test_graph():

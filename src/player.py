@@ -3,12 +3,13 @@ from random import randint, random
 import numpy as np
 import tensorflow as tf
 
-import src.dqn as dqn
-import src.environment as environment
-import src.game_data as game_data
-import src.graph as graph
-import src.utils as utils
+import dqn as dqn
+import environment as environment
+import game_data as game_data
+import graph as graph
+import utils as utils
 from PIL import Image
+
 
 class Player:
     def __init__(self):
@@ -86,7 +87,6 @@ class Player:
     def exploration_probability(self, current, maximum, increment):
         current += increment
         return min(maximum,current)
-
 
 
 if __name__ == '__main__':

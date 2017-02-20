@@ -3,8 +3,6 @@ import csv
 import imageio
 from PIL import Image
 
-from src.environment import GymEnvironment
-
 
 class Executor:
     def __init__(self, execution_path, execution_timestamp=None):
