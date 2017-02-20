@@ -9,7 +9,7 @@ import numpy as np
 
 
 class Player:
-    def __int__(self):
+    def __init__(self):
         self.no_of_steps = 1000
         self.game_train_batch_size = 10
         self.env = environment.GymEnvironment('Breakout-v0')
@@ -67,7 +67,7 @@ class Player:
                     batch_data_store.add_step(step_timestamp, obv, concatenated_input, reward, action_value, action)
             # computing loss for all the dataset
             self.dqn.compute_loss(batch_data_store)
-            self.dqn.train(batch_data_store, 30, self.graph, self.graph_input, self.graph_action_value, self.graph_updated_action)
+            self.dqn.train(batch_data_store, 10, self.graph, self.graph_input, self.graph_action_value, self.graph_updated_action)
             batch_data_store.save_progress()
 
     def exploration_probability(self, current, maximum, increment):

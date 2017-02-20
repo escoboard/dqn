@@ -31,7 +31,7 @@ class DQN:
         total_no_step = game_batch_data.get_total_steps()
         no_of_epochs = int(total_no_step * epoch_factor)
         for x in no_of_epochs:
-            random_data = self._get_random_batch(game_batch_data, 20)
+            random_data = self._get_random_batch(game_batch_data, 30)
             update_action = []
             input_observation = []
             actions_value = []
