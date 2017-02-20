@@ -2,11 +2,11 @@ import tensorflow as tf
 
 
 class Graph:
-    def __init__(self, actions, load_dir=None):
+    def __init__(self, actions, tf_session, load_dir=None):
         self.actions = actions
         self.load_dir = load_dir
+        self.tf_session = tf_session
         self.graph = None
-        self.input_layer = None
 
     def _get_weights(self, shape, name='weights'):
         with tf.name_scope(name):
@@ -81,19 +81,17 @@ class Graph:
 
         train_op = tf.train.AdamOptimizer(1e-4).minimize(loss)
 
-
         return action_taken, input_layer, loss,updated_action ,train_op
 
     def _load_graph(self, load_dir):
         saver = tf.train.Saver()
-        sess = tf.Session()
-        saver.restore(sess, self.load_dir)
+
+        saver.restore(self.tf_session, self.load_dir)
         tf.logging.INFO('Successfully loaded the graph')
 
     def save_graph(self,save_dir):
         saver = tf.train.Saver()
-        sess = tf.Session()
-        saver.save(sess, save_dir)
+        saver.save(self.tf_session, save_dir)
         tf.logging.INFO('Successfully saved the graph at %s'%save_dir)
 
     def get_graph(self):
