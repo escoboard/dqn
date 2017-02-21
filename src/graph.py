@@ -10,13 +10,13 @@ class Graph:
 
     def _get_weights(self, shape, name='weights'):
         with tf.name_scope(name):
-            weights = tf.Variable(tf.truncated_normal(shape, stddev=0.01))
+            weights = tf.Variable(tf.truncated_normal(shape, stddev=0.005))
         tf.summary.histogram(name, weights)
         return weights
 
     def _get_bias(self, shape, name='bias'):
         with tf.name_scope(name):
-            bias = tf.Variable(tf.constant(0.01, shape=shape))
+            bias = tf.Variable(tf.constant(0.005, shape=shape))
         tf.summary.histogram(name, bias)
         return bias
 
@@ -76,12 +76,14 @@ class Graph:
             tf.summary.histogram('output', action_value)
 
         with tf.name_scope("Loss"):
-            loss = updated_action - action_value
-            tf.summary.histogram("Loss", loss)
+            diff =  action_value - updated_action 
+            tf.summary.histogram("Diff", diff)
+            loss = tf.reduce_sum(diff)
+            tf.summary.scalar("Loss", loss)
 
-        train_op = tf.train.AdamOptimizer(1e-4).minimize(loss)
+        train_op = tf.train.AdamOptimizer(1e-6).minimize(loss)
 
-        return train_op, input_layer, action_value, updated_action
+        return train_op, input_layer, action_value, updated_action , loss
 
     def _load_graph(self, load_dir):
         saver = tf.train.Saver()
@@ -95,10 +97,10 @@ class Graph:
         tf.logging.INFO('Successfully saved the graph at %s'%save_dir)
 
     def get_graph(self):
-        self.graph, input_layer, action_value, updated_action = self._create_new_graph()
+        self.graph, input_layer, action_value, updated_action ,loss= self._create_new_graph()
         if self.load_dir:
             self._load_graph(self.load_dir)
-        return self.graph, input_layer, action_value, updated_action
+        return self.graph, input_layer, action_value, updated_action, loss
 
 if __name__ == '__main__':
     Graph(action=10).get_graph()
