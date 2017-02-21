@@ -29,7 +29,6 @@ class Graph:
             return tf.nn.max_pool(input_layer, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
     def _create_new_graph(self):
-
         with tf.name_scope('Input'):
             input_layer = tf.placeholder(tf.float32, shape=[None, 25600], name='id')
             input = tf.reshape(input_layer, [-1, 80, 320, 1])
@@ -76,14 +75,19 @@ class Graph:
             tf.summary.histogram('output', action_value)
 
         with tf.name_scope("Loss"):
-            diff =  action_value - updated_action 
+            diff = action_value - updated_action
             tf.summary.histogram("Diff", diff)
             loss = tf.reduce_sum(diff)
             tf.summary.scalar("Loss", loss)
+            loss_with_reg = loss + 0.01 * (tf.reduce_sum(tf.square(hidden_1_weights)) +
+                                           tf.reduce_sum(tf.square(readout_weights)) + tf.reduce_sum(
+                tf.square(conv_1_weights)) +
+                                           tf.reduce_sum(tf.square(conv_2_weights)) + tf.reduce_sum(
+                tf.square(conv_3_weights)) + tf.reduce_sum((tf.square(conv_4_weights))))
+            tf.summary.scalar("Loss_with_regg", loss_with_reg)
+            train_op = tf.train.RMSPropOptimizer(1e-6).minimize(loss_with_reg)
 
-        train_op = tf.train.AdamOptimizer(1e-6).minimize(loss)
-
-        return train_op, input_layer, action_value, updated_action , loss
+        return train_op, input_layer, action_value, updated_action, loss
 
     def _load_graph(self, load_dir):
         saver = tf.train.Saver()
@@ -91,16 +95,17 @@ class Graph:
         saver.restore(self.tf_session, self.load_dir)
         tf.logging.INFO('Successfully loaded the graph')
 
-    def save_graph(self,save_dir):
+    def save_graph(self, save_dir):
         saver = tf.train.Saver()
         saver.save(self.tf_session, save_dir)
-        tf.logging.INFO('Successfully saved the graph at %s'%save_dir)
+        tf.logging.INFO('Successfully saved the graph at %s' % save_dir)
 
     def get_graph(self):
-        self.graph, input_layer, action_value, updated_action ,loss= self._create_new_graph()
+        self.graph, input_layer, action_value, updated_action, loss = self._create_new_graph()
         if self.load_dir:
             self._load_graph(self.load_dir)
         return self.graph, input_layer, action_value, updated_action, loss
+
 
 if __name__ == '__main__':
     Graph(action=10).get_graph()
