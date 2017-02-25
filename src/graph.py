@@ -71,7 +71,7 @@ class Graph:
             readout_bias = self._get_bias([self.actions])
 
         with tf.name_scope('Output_Distribution'):
-            action_value = tf.matmul(hidden_1_layer_output, readout_weights) + readout_bias
+            action_value = tf.nn.softmax(tf.matmul(hidden_1_layer_output, readout_weights) + readout_bias)
             tf.summary.histogram('output', action_value)
 
         with tf.name_scope("Loss"):
@@ -79,13 +79,13 @@ class Graph:
             tf.summary.histogram("Diff", diff)
             loss = tf.reduce_sum(diff)
             tf.summary.scalar("Loss", loss)
-            loss_with_reg = loss + 0.01 * (tf.reduce_sum(tf.square(hidden_1_weights)) +
+            loss_with_reg = loss + 0.0001 * (tf.reduce_sum(tf.square(hidden_1_weights)) +
                                            tf.reduce_sum(tf.square(readout_weights)) + tf.reduce_sum(
                 tf.square(conv_1_weights)) +
                                            tf.reduce_sum(tf.square(conv_2_weights)) + tf.reduce_sum(
                 tf.square(conv_3_weights)) + tf.reduce_sum((tf.square(conv_4_weights))))
             tf.summary.scalar("Loss_with_regg", loss_with_reg)
-            train_op = tf.train.RMSPropOptimizer(1e-6).minimize(loss_with_reg)
+        train_op = tf.train.RMSPropOptimizer(1e-3).minimize(loss_with_reg)
 
         return train_op, input_layer, action_value, updated_action, loss
 
@@ -98,7 +98,7 @@ class Graph:
     def save_graph(self, save_dir):
         saver = tf.train.Saver()
         saver.save(self.tf_session, save_dir)
-        tf.logging.INFO('Successfully saved the graph at %s' % save_dir)
+        #tf.logging.INFO('Successfully saved the graph at %s' % save_dir)
 
     def get_graph(self):
         self.graph, input_layer, action_value, updated_action, loss = self._create_new_graph()
