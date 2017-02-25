@@ -17,9 +17,9 @@ class Player:
         self.game_train_batch_size = 3
         self.env = environment.GymEnvironment('Pong-v0')
         self.sess = tf.Session()
-        self.graph, self.graph_input, self.graph_action_value, self.graph_updated_action ,self.loss= graph.Graph(
-            self.env.actions(), self.sess).get_graph()
-        self.dqn = dqn.DQN(self.sess, gamma=0.5)
+        self.G = graph.Graph(self.env.actions(), self.sess)
+        self.graph, self.graph_input, self.graph_action_value, self.graph_updated_action ,self.loss= self.G.get_graph()
+        self.dqn = dqn.DQN(self.sess, gamma=0.8)
         self.sess.run(tf.global_variables_initializer())
         self.tf_merged_summary_op = tf.summary.merge_all()
         self.tf_writer = tf.summary.FileWriter('output', self.sess.graph)
@@ -64,7 +64,7 @@ class Player:
                         action = np.argmax(action_value)
                         #print(action_value)
 
-                    epsilon = self.exploration_probability(epsilon, 0.9, 0.00001)
+                    epsilon = self.exploration_probability(epsilon, 0.99, 0.0000001)
                     if epsilon > random():
                         # Random action
                         action = randint(0, self.env.actions() - 1)
@@ -83,6 +83,7 @@ class Player:
             self.dqn.train(batch_data_store, 10, self.graph, self.graph_input, self.graph_action_value,
                            self.graph_updated_action,self.tf_merged_summary_op,self.tf_writer,self.loss)
             batch_data_store.save_progress()
+            self.G.save_graph('output/'+str(batch_timestamp)+'.ckpt')
             print("Batch %d done training done" % x)
 
     def exploration_probability(self, current, maximum, increment):
