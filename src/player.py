@@ -64,8 +64,8 @@ class Player:
                         action = np.argmax(action_value)
                         #print(action_value)
 
-                    epsilon = self.exploration_probability(epsilon, 0.99, 0.0000001)
-                    if epsilon > random():
+                    epsilon = self.exploration_probability(epsilon, 0.9, 0.000001)
+                    if random() > epsilon:
                         # Random action
                         action = randint(0, self.env.actions() - 1)
                     obv, reward, done, info = self.env.step(action)
@@ -80,7 +80,7 @@ class Player:
             # computing loss for all the dataset
             print ("Batch %d done training started"%x)
             self.dqn.compute_loss(batch_data_store)
-            self.dqn.train(batch_data_store, 10, self.graph, self.graph_input, self.graph_action_value,
+            self.dqn.train(batch_data_store, 100, self.graph, self.graph_input, self.graph_action_value,
                            self.graph_updated_action,self.tf_merged_summary_op,self.tf_writer,self.loss)
             batch_data_store.save_progress()
             self.G.save_graph('output/'+str(batch_timestamp)+'.ckpt')
