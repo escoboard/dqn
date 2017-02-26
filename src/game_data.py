@@ -51,9 +51,9 @@ class GameBatchData:
             concatenated_screenshots = []
             for step in game:
                 screenshots.append((step['observation'], step['timestamp']))
-                concatenated_screenshots.append((step['concatenated_observation'], step['timestamp']))
+                #concatenated_screenshots.append((step['concatenated_observation'], step['timestamp']))
             executor.add_screenshots(screenshots)
-            executor.add_screenshots(concatenated_screenshots, 'concat_screenshots')
+            #executor.add_screenshots(concatenated_screenshots, 'concat_screenshots')
 
             # Write data to CSV
             executor.write_csv(headers=self.game_data_headers,
