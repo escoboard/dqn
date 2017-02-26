@@ -75,7 +75,7 @@ class Graph:
             tf.summary.histogram('output', action_value)
 
         with tf.name_scope("Loss"):
-            diff = action_value - updated_action
+            diff =  updated_action - action_value 
             tf.summary.histogram("Diff", diff)
             loss = tf.reduce_sum(diff)
             tf.summary.scalar("Loss", loss)
