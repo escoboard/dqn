@@ -41,7 +41,7 @@ class GymEnvironment(Environment):
 
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
-        observation = np.array(Image.fromarray(observation).resize((80, 80)))
+        observation = np.array(Image.fromarray(observation).resize((84, 84)))
         return observation, reward, done, info
 
     def actions(self):

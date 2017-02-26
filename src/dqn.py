@@ -40,7 +40,7 @@ class DQN:
             actions_value = []
 
             for data in random_data:
-                input_observation.append(np.reshape(data['concatenated_observation'],(-1)))
+                input_observation.append(data['concatenated_observation'])
                 step_action_value = data['action_value']
                 #print(step_action_value,id(step_action_value[data['action']]))
                 actions_value.append(step_action_value)
