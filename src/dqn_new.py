@@ -13,7 +13,6 @@ from keras.layers import Convolution2D, Flatten, Dense
 import game_data as game_data
 import utils as utils
 
-
 ENV_NAME = 'Pong-v0'  # Environment name
 FRAME_WIDTH = 84  # Resized frame width
 FRAME_HEIGHT = 84  # Resized frame height
@@ -60,18 +59,28 @@ class Agent():
         # Create q network
         self.s, self.q_values, q_network = self.build_network()
         q_network_weights = q_network.trainable_weights
-
+        with tf.namescope('Q Weights'):
+            i = 0
+            for weight in q_network_weights:
+                tf.summary.histogram(str(i), weight)
+                i += 1
         # Create target network
         self.st, self.target_q_values, target_network = self.build_network()
         target_network_weights = target_network.trainable_weights
-
+        with tf.namescope('Target Weights'):
+            i = 0
+            for weight in target_network_weights:
+                tf.summary.histogram(str(i), weight)
+                i += 1
         # Define target network update operation
-        self.update_target_network = [target_network_weights[i].assign(q_network_weights[i]) for i in range(len(target_network_weights))]
+        self.update_target_network = [target_network_weights[i].assign(q_network_weights[i]) for i in
+                                      range(len(target_network_weights))]
 
         # Define loss and gradient update operation
         self.a, self.y, self.loss, self.grads_update = self.build_training_op(q_network_weights)
-
-        self.sess = tf.InteractiveSession()
+        config = tf.ConfigProto()
+        config.gpu_options.per_process_gpu_memory_fraction = 0.05
+        self.sess = tf.InteractiveSession(config=config)
         self.saver = tf.train.Saver(q_network_weights)
         self.summary_placeholders, self.update_ops, self.summary_op = self.setup_summary()
         self.summary_writer = tf.summary.FileWriter(SAVE_SUMMARY_PATH, self.sess.graph)
@@ -90,7 +99,8 @@ class Agent():
 
     def build_network(self):
         model = Sequential()
-        model.add(Convolution2D(32, 8, 8, subsample=(4, 4), activation='relu', input_shape=(STATE_LENGTH, FRAME_WIDTH, FRAME_HEIGHT)))
+        model.add(Convolution2D(32, 8, 8, subsample=(4, 4), activation='relu',
+                                input_shape=(STATE_LENGTH, FRAME_WIDTH, FRAME_HEIGHT)))
         model.add(Convolution2D(64, 4, 4, subsample=(2, 2), activation='relu'))
         model.add(Convolution2D(64, 3, 3, subsample=(1, 1), activation='relu'))
         model.add(Flatten())
@@ -123,7 +133,8 @@ class Agent():
 
     def get_initial_state(self, observation, last_observation):
         processed_observation = np.maximum(observation, last_observation)
-        processed_observation = np.uint8(resize(rgb2gray(processed_observation), (FRAME_WIDTH, FRAME_HEIGHT), mode='reflect') * 255)
+        processed_observation = np.uint8(
+            resize(rgb2gray(processed_observation), (FRAME_WIDTH, FRAME_HEIGHT), mode='reflect') * 255)
         state = [processed_observation for _ in range(STATE_LENGTH)]
         return np.stack(state, axis=0)
 
@@ -173,7 +184,7 @@ class Agent():
             # Write summary
             if self.t >= INITIAL_REPLAY_SIZE:
                 stats = [self.total_reward, self.total_q_max / float(self.duration),
-                        self.duration, self.total_loss / (float(self.duration) / float(TRAIN_INTERVAL))]
+                         self.duration, self.total_loss / (float(self.duration) / float(TRAIN_INTERVAL))]
                 for i in range(len(stats)):
                     self.sess.run(self.update_ops[i], feed_dict={
                         self.summary_placeholders[i]: float(stats[i])
@@ -188,7 +199,8 @@ class Agent():
                 mode = 'explore'
             else:
                 mode = 'exploit'
-            print('EPISODE: {0:6d} / TIMESTEP: {1:8d} / DURATION: {2:5d} / EPSILON: {3:.5f} / TOTAL_REWARD: {4:3.0f} / AVG_MAX_Q: {5:2.4f} / AVG_LOSS: {6:.5f} / MODE: {7}'.format(
+            print(
+            'EPISODE: {0:6d} / TIMESTEP: {1:8d} / DURATION: {2:5d} / EPSILON: {3:.5f} / TOTAL_REWARD: {4:3.0f} / AVG_MAX_Q: {5:2.4f} / AVG_LOSS: {6:.5f} / MODE: {7}'.format(
                 self.episode + 1, self.t, self.duration, self.epsilon,
                 self.total_reward, self.total_q_max / float(self.duration),
                 self.total_loss / (float(self.duration) / float(TRAIN_INTERVAL)), mode))
@@ -223,7 +235,8 @@ class Agent():
         # Convert True to 1, False to 0
         terminal_batch = np.array(terminal_batch) + 0
 
-        target_q_values_batch = self.target_q_values.eval(feed_dict={self.st: np.float32(np.array(next_state_batch) / 255.0)})
+        target_q_values_batch = self.target_q_values.eval(
+            feed_dict={self.st: np.float32(np.array(next_state_batch) / 255.0)})
         y_batch = reward_batch + (1 - terminal_batch) * GAMMA * np.max(target_q_values_batch, axis=1)
 
         loss, _ = self.sess.run([self.loss, self.grads_update], feed_dict={
@@ -270,7 +283,8 @@ class Agent():
 
 def preprocess(observation, last_observation):
     processed_observation = np.maximum(observation, last_observation)
-    processed_observation = np.uint8(resize(rgb2gray(processed_observation), (FRAME_WIDTH, FRAME_HEIGHT), mode='reflect') * 255)
+    processed_observation = np.uint8(
+        resize(rgb2gray(processed_observation), (FRAME_WIDTH, FRAME_HEIGHT), mode='reflect') * 255)
     return np.reshape(processed_observation, (1, FRAME_WIDTH, FRAME_HEIGHT))
 
 
@@ -280,8 +294,8 @@ def main():
 
     if TRAIN:  # Train mode
         for _ in range(NUM_EPISODES):
-            reward_sum=0
-            action_value_sum=0
+            reward_sum = 0
+            action_value_sum = 0
             batch_data_store = game_data.GameBatchData(batch_timestamp)
             game_timestamp = utils.get_timestamp(True)
             print('game started at %d' % (game_timestamp))
@@ -293,12 +307,13 @@ def main():
                 last_observation = observation
                 observation, reward, _, _ = env.step(0)  # Do nothing
             state = agent.get_initial_state(observation, last_observation)
-            batch_data_store.add_step(step_timestamp, observation, None, reward, [0 for _ in range(env.action_space.n)], 0)
+            batch_data_store.add_step(step_timestamp, observation, None, reward, [0 for _ in range(env.action_space.n)],
+                                      0)
 
             while not terminal:
                 step_timestamp = utils.get_timestamp(True)
                 last_observation = observation
-                action,action_value = agent.get_action(state)
+                action, action_value = agent.get_action(state)
                 observation, reward, terminal, _ = env.step(action)
                 # env.render()
                 processed_observation = preprocess(observation, last_observation)
@@ -323,7 +338,7 @@ def main():
                 processed_observation = preprocess(observation, last_observation)
                 state = np.append(state[1:, :, :], processed_observation, axis=0)
 
-        # env.monitor.close()
+                # env.monitor.close()
 
 
 if __name__ == '__main__':
