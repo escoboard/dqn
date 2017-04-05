@@ -10,6 +10,9 @@ from skimage.color import rgb2gray
 from skimage.transform import resize
 from keras.models import Sequential
 from keras.layers import Convolution2D, Flatten, Dense
+import game_data as game_data
+import utils as utils
+
 
 ENV_NAME = 'Pong-v0'  # Environment name
 FRAME_WIDTH = 84  # Resized frame width
@@ -30,7 +33,7 @@ MOMENTUM = 0.95  # Momentum used by RMSProp
 MIN_GRAD = 0.01  # Constant added to the squared gradient in the denominator of the RMSProp update
 SAVE_INTERVAL = 300000  # The frequency with which the network is saved
 NO_OP_STEPS = 30  # Maximum number of "do nothing" actions to be performed by the agent at the start of an episode
-LOAD_NETWORK = True
+LOAD_NETWORK = False
 TRAIN = True
 SAVE_NETWORK_PATH = 'saved_networks/' + ENV_NAME
 SAVE_SUMMARY_PATH = 'summary/' + ENV_NAME
@@ -125,16 +128,17 @@ class Agent():
         return np.stack(state, axis=0)
 
     def get_action(self, state):
+        action_value = self.q_values.eval(feed_dict={self.s: [np.float32(state / 255.0)]})
         if self.epsilon >= random.random() or self.t < INITIAL_REPLAY_SIZE:
             action = random.randrange(self.num_actions)
         else:
-            action = np.argmax(self.q_values.eval(feed_dict={self.s: [np.float32(state / 255.0)]}))
+            action = np.argmax(action_value)
 
         # Anneal epsilon linearly over time
         if self.epsilon > FINAL_EPSILON and self.t >= INITIAL_REPLAY_SIZE:
             self.epsilon -= self.epsilon_step
 
-        return action
+        return action, action_value
 
     def run(self, state, action, reward, terminal, observation):
         next_state = np.append(state[1:, :, :], observation, axis=0)
@@ -276,19 +280,32 @@ def main():
 
     if TRAIN:  # Train mode
         for _ in range(NUM_EPISODES):
+            reward_sum=0
+            action_value_sum=0
+            batch_data_store = game_data.GameBatchData(batch_timestamp)
+            game_timestamp = utils.get_timestamp(True)
+            print('game started at %d' % (game_timestamp))
+            batch_data_store.new_game(game_timestamp)
             terminal = False
             observation = env.reset()
             for _ in range(random.randint(1, NO_OP_STEPS)):
+                step_timestamp = utils.get_timestamp(True)
                 last_observation = observation
-                observation, _, _, _ = env.step(0)  # Do nothing
+                observation, reward, _, _ = env.step(0)  # Do nothing
             state = agent.get_initial_state(observation, last_observation)
+            batch_data_store.add_step(step_timestamp, observation, None, reward, [0 for _ in range(env.action_space.n)], 0)
+
             while not terminal:
+                step_timestamp = utils.get_timestamp(True)
                 last_observation = observation
-                action = agent.get_action(state)
+                action,action_value = agent.get_action(state)
                 observation, reward, terminal, _ = env.step(action)
                 # env.render()
                 processed_observation = preprocess(observation, last_observation)
                 state = agent.run(state, action, reward, terminal, processed_observation)
+                batch_data_store.add_step(step_timestamp, observation, None, reward, action_value, action)
+            batch_data_store.save_progress()
+
     else:  # Test mode
         # env.monitor.start(ENV_NAME + '-test')
         for _ in range(NUM_EPISODES_AT_TEST):
@@ -305,6 +322,7 @@ def main():
                 env.render()
                 processed_observation = preprocess(observation, last_observation)
                 state = np.append(state[1:, :, :], processed_observation, axis=0)
+
         # env.monitor.close()
 
 
