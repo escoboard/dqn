@@ -13,7 +13,7 @@ from keras.layers import Convolution2D, Flatten, Dense
 import game_data as game_data
 import utils as utils
 
-ENV_NAME = 'Pong-v0'  # Environment name
+ENV_NAME = 'Atlantis-v0'  # Environment name
 FRAME_WIDTH = 84  # Resized frame width
 FRAME_HEIGHT = 84  # Resized frame height
 NUM_EPISODES = 12000  # Number of episodes the agent plays
@@ -35,7 +35,7 @@ NO_OP_STEPS = 30  # Maximum number of "do nothing" actions to be performed by th
 LOAD_NETWORK = False
 TRAIN = True
 SAVE_NETWORK_PATH = 'saved_networks/' + ENV_NAME
-SAVE_SUMMARY_PATH = 'summary/' + ENV_NAME
+SAVE_SUMMARY_PATH = 'newsummary/' + ENV_NAME
 NUM_EPISODES_AT_TEST = 30  # Number of episodes the agent plays at test time
 
 
@@ -59,7 +59,7 @@ class Agent():
         # Create q network
         self.s, self.q_values, q_network = self.build_network()
         q_network_weights = q_network.trainable_weights
-        with tf.namescope('Q Weights'):
+        with tf.name_scope('Q_Weights'):
             i = 0
             for weight in q_network_weights:
                 tf.summary.histogram(str(i), weight)
@@ -67,7 +67,7 @@ class Agent():
         # Create target network
         self.st, self.target_q_values, target_network = self.build_network()
         target_network_weights = target_network.trainable_weights
-        with tf.namescope('Target Weights'):
+        with tf.name_scope('Target_Weights'):
             i = 0
             for weight in target_network_weights:
                 tf.summary.histogram(str(i), weight)
@@ -79,7 +79,7 @@ class Agent():
         # Define loss and gradient update operation
         self.a, self.y, self.loss, self.grads_update = self.build_training_op(q_network_weights)
         config = tf.ConfigProto()
-        config.gpu_options.per_process_gpu_memory_fraction = 0.05
+        config.gpu_options.per_process_gpu_memory_fraction = 0.095
         self.sess = tf.InteractiveSession(config=config)
         self.saver = tf.train.Saver(q_network_weights)
         self.summary_placeholders, self.update_ops, self.summary_op = self.setup_summary()
@@ -200,10 +200,10 @@ class Agent():
             else:
                 mode = 'exploit'
             print(
-            'EPISODE: {0:6d} / TIMESTEP: {1:8d} / DURATION: {2:5d} / EPSILON: {3:.5f} / TOTAL_REWARD: {4:3.0f} / AVG_MAX_Q: {5:2.4f} / AVG_LOSS: {6:.5f} / MODE: {7}'.format(
-                self.episode + 1, self.t, self.duration, self.epsilon,
-                self.total_reward, self.total_q_max / float(self.duration),
-                self.total_loss / (float(self.duration) / float(TRAIN_INTERVAL)), mode))
+                'EPISODE: {0:6d} / TIMESTEP: {1:8d} / DURATION: {2:5d} / EPSILON: {3:.5f} / TOTAL_REWARD: {4:3.0f} / AVG_MAX_Q: {5:2.4f} / AVG_LOSS: {6:.5f} / MODE: {7}'.format(
+                    self.episode + 1, self.t, self.duration, self.epsilon,
+                    self.total_reward, self.total_q_max / float(self.duration),
+                    self.total_loss / (float(self.duration) / float(TRAIN_INTERVAL)), mode))
 
             self.total_reward = 0
             self.total_q_max = 0
@@ -293,22 +293,30 @@ def main():
     agent = Agent(num_actions=env.action_space.n)
 
     if TRAIN:  # Train mode
-        for _ in range(NUM_EPISODES):
+        for epi in range(NUM_EPISODES):
             reward_sum = 0
             action_value_sum = 0
-            batch_data_store = game_data.GameBatchData(batch_timestamp)
+            if epi % 200 == 0:
+                t = 0
+                batch_timestamp = utils.get_timestamp(True)
+                batch_data_store = game_data.GameBatchData(batch_timestamp)
             game_timestamp = utils.get_timestamp(True)
+            total_reward = 0
+            total_q_value = 0
             print('game started at %d' % (game_timestamp))
-            batch_data_store.new_game(game_timestamp)
+            if t % 20 == 0:
+                batch_data_store.new_game(game_timestamp)
             terminal = False
             observation = env.reset()
             for _ in range(random.randint(1, NO_OP_STEPS)):
                 step_timestamp = utils.get_timestamp(True)
                 last_observation = observation
                 observation, reward, _, _ = env.step(0)  # Do nothing
+                if t % 20 == 0:
+                    total_reward+=reward
+                    batch_data_store.add_step(step_timestamp, observation, None, reward,
+                                              [0 for _ in range(env.action_space.n)], 0)
             state = agent.get_initial_state(observation, last_observation)
-            batch_data_store.add_step(step_timestamp, observation, None, reward, [0 for _ in range(env.action_space.n)],
-                                      0)
 
             while not terminal:
                 step_timestamp = utils.get_timestamp(True)
@@ -318,8 +326,12 @@ def main():
                 # env.render()
                 processed_observation = preprocess(observation, last_observation)
                 state = agent.run(state, action, reward, terminal, processed_observation)
-                batch_data_store.add_step(step_timestamp, observation, None, reward, action_value, action)
-            batch_data_store.save_progress()
+                if t % 20 == 0:
+                    batch_data_store.add_step(step_timestamp, observation, None, reward, action_value, action)
+            t += 1
+            print("game ", epi, " done")
+            if t % 200 == 0:
+                batch_data_store.save_progress()
 
     else:  # Test mode
         # env.monitor.start(ENV_NAME + '-test')
