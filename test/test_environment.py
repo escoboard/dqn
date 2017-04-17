@@ -1,7 +1,7 @@
 from src.environment import GymEnvironment
 import unittest
 class TestGymEnvironment(unittest.TestCase):
-    def __init__(self):
+    def setUp(self):
         self.environment = GymEnvironment('Pong-vo')
 
     def test_number_of_action_pong(self):
