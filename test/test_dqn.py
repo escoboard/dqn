@@ -2,7 +2,7 @@ import src.dqn_new as dqn
 import unittest
 import numpy as np
 class TestDQN(unittest.TestCase):
-    def __init__(self):
+    def setUp(self):
         self.agent= dqn.Agent()
 
 
@@ -26,13 +26,13 @@ class TestDQN(unittest.TestCase):
 
     def test_get_initial_state(self):
         print("Testing fetching initial state")
-        stack = self.agent.get_initial_state(np.array([100,100]))
+        stack = self.agent.get_initial_state(np.array([[100, 100], [100, 100]]))
         print(stack)
 
 
     def test_get_action(self):
         print("Testing getting action")
-        action, action_value = self.agent.get_action(np.array([100,100]))
+        action, action_value = self.agent.get_action(np.array([[100, 100], [100, 100]]))
         print(action)
         print(action_value)
 
@@ -52,7 +52,7 @@ class TestDQN(unittest.TestCase):
 
     def test_preprocess(self):
         print("Testing preprocessing states")
-        stack = dqn.preprocess(np.array([100,100]),np.array([100,100]))
+        stack = dqn.preprocess(np.array([100,100]),np.array([[100, 100], [100, 100]]))
         print(stack)
 
 
