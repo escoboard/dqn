@@ -9,20 +9,29 @@ import game_data as game_data
 import graph as graph
 import utils as utils
 from PIL import Image
-
+import argparse
 
 class Player:
     def __init__(self):
-        self.no_of_steps = 1000000000000
-        self.game_train_batch_size = 3
-        self.env = environment.GymEnvironment('Pong-v0')
-        self.sess = tf.Session()
-        self.G = graph.Graph(self.env.actions(), self.sess)
-        self.graph, self.graph_input, self.graph_action_value, self.graph_updated_action ,self.loss= self.G.get_graph()
-        self.dqn = dqn.DQN(self.sess, gamma=0.8)
-        self.sess.run(tf.global_variables_initializer())
-        self.tf_merged_summary_op = tf.summary.merge_all()
-        self.tf_writer = tf.summary.FileWriter('output', self.sess.graph)
+        ps_hosts = FLAGS.ps_hosts.split(",")
+        worker_hosts = FLAGS.worker_hosts.split(",")
+        if FLAGS.job_name == "ps":
+            server.join()
+        elif FLAGS.job_name == "worker":
+            self.no_of_steps = 1000000000000
+            self.game_train_batch_size = 3
+            self.env = environment.GymEnvironment('Pong-v0')
+            self.sess =  tf.train.MonitoredTrainingSession(master=server.target,
+                                                   is_chief=(FLAGS.task_index == 0),
+                                                   checkpoint_dir="/tmp/train_logs",
+                                                   hooks=hooks)
+
+            self.G = graph.Graph(self.env.actions(), self.sess)
+            self.graph, self.graph_input, self.graph_action_value, self.graph_updated_action ,self.loss= self.G.get_graph()
+            self.dqn = dqn.DQN(self.sess, gamma=0.8)
+            self.sess.run(tf.global_variables_initializer())
+            self.tf_merged_summary_op = tf.summary.merge_all()
+            self.tf_writer = tf.summary.FileWriter('output', self.sess.graph)
 
     def play(self):
 
@@ -91,5 +100,34 @@ class Player:
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.register("type", "bool", lambda v: v.lower() == "true")
+    # Flags for defining the tf.train.ClusterSpec
+    parser.add_argument(
+        "--ps_hosts",
+        type=str,
+        default="",
+        help="Comma-separated list of hostname:port pairs"
+    )
+    parser.add_argument(
+        "--worker_hosts",
+        type=str,
+        default="",
+        help="Comma-separated list of hostname:port pairs"
+    )
+    parser.add_argument(
+        "--job_name",
+        type=str,
+        default="",
+        help="One of 'ps', 'worker'"
+    )
+    # Flags for defining the tf.train.Server
+    parser.add_argument(
+        "--task_index",
+        type=int,
+        default=0,
+        help="Index of task within the job"
+    )
+    FLAGS, unparsed = parser.parse_known_args()
     player = Player()
     player.play()
