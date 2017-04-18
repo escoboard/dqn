@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+FLAGS = None
 
 class Graph:
     def __init__(self, actions, tf_session, load_dir=None):
@@ -72,8 +73,10 @@ class Graph:
             tf.summary.histogram("Diff", diff)
             loss = tf.reduce_mean(diff)
             tf.summary.scalar("Loss", loss)
-
-        train_op = tf.train.RMSPropOptimizer(1e-4).minimize(loss)
+        with tf.device(tf.train.replica_device_setter(
+                worker_device="/job:worker/task:%d" % FLAGS.task_index,
+                cluster=cluster))
+            train_op = tf.train.RMSPropOptimizer(1e-4).minimize(loss)
 
         return train_op, input, action_value, updated_action, loss
 
